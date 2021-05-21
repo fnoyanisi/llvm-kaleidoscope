@@ -26,6 +26,7 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
+#include <vector>
 
 enum class TokenType {
         tok_eof,
@@ -45,13 +46,87 @@ enum class TokenType {
 class Token {
         TokenType type;
         int value;
-        public:
-                Token(TokenType t): type(t), value(-1);
-                Token(TokenType t, int v): type(t), value(v);
-}
+public:
+        Token(TokenType t): type(t), value(-1);
+        Token(TokenType t, int v): type(t), value(v);
+};
 
 static std::string IdentifierStr; // used when the token is an identifier
 static double NumVal;             // used when the token is a number 
+
+// Base class for all expression nodes
+class ExprAST {
+public:
+        virtual ~ExprAST() {}
+        virtual void print() {}
+};
+
+// Expression class for numeric literals such as "2.1"
+class NumberExprAST : public ExprAST {
+        double Val;
+public:
+        NumberExprAST(double v): Val(v) {}
+        void print() { std:: cout << "Numeric Expression with value " <<
+                Val << std::endl; }
+};
+
+// Expression class for referenceing a variable like "a"
+class VariableExprAST : public ExprAST {
+        std::string Name;
+public:
+        VariableExprAST(const std::string &n): Name(n) {}
+        void print() { std:: cout << "Variable Expression with name " <<
+                Name << std::endl; }
+};
+
+// Expression class for binary operators
+class BinaryExprAST : public ExprAST {
+        char Op;
+        std::unique_ptr<ExprAST> LHS, RHS;
+public:
+        BinaryExprAST(char op, std::unique_ptr<ExprAST> l,
+                                std::unique_ptr<ExprAST> r):
+                                Op(op), LHS(std::move(l)), RHS(std::move(r)) {}
+        void print() { 
+                std:: cout << "Binary Expression '" << Op << "' with [";
+                LHS->print();
+                std::cout << "] on the left-hand side and [";
+                RHS->print();
+                std::cout << "] on the right-hand side and ";
+                }
+};
+
+// Expression class for function calls
+class CallsExprAST : public ExprAST {
+        std::string Callee;
+        std::vector<std::unique_ptr<ExprAST> > Args;
+public:
+        CallsExprAST(const std::string &c,
+                std::vector<std::unique_ptr<ExprAST> > a): 
+                Callee(c), Args(std::move(a)) {}
+};
+
+// This class represents the "prototype" for a function,
+// which captures its name, and its argument names (thus implicitly the number
+// of arguments the function takes).
+class PrototypeAST {
+        std::string Name;
+        std::vector<std::string> Args;
+public:
+        PrototypeAST(const std::string &n, std::vector<std::string> args):
+                Args(args), Name(n) {}
+        const std::string &getName() const { return Name; }
+};
+
+// Function definition itself
+class FunctionAST {
+        std::unique_ptr<PrototypeAST> Proto;
+        std::unique_ptr<ExprAST> Body;
+public:
+        FunctionAST(std::unique_ptr<PrototypeAST> p,
+                std::unique_ptr<ExprAST> b): 
+                Proto(std::move(p)), Body(std::move(b)) {}
+};
 
 // returns the next token from standard input
 static Token GetTok() {
