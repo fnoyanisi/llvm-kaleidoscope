@@ -41,14 +41,18 @@ enum class TokenType {
 
         // operator
         tok_op,
+
+        // undefinied
+        tok_undef,
 };
 
 class Token {
         TokenType _type;
         int _value;
 public:
-        Token(TokenType t): _type(t), _value(-1);
-        Token(TokenType t, int v): _type(t), _value(v);
+        Token(): _type(TokenType::tok_undef), _value(-1) {};
+        Token(TokenType t): _type(t), _value(-1) {};
+        Token(TokenType t, int v): _type(t), _value(v) {};
         const TokenType type() const { return _type; }
         void type(TokenType t) { _type = t; }
         const int value() const { return _value; }
@@ -205,4 +209,97 @@ static Token GetTok() {
         int ThisChar = LastChar;
         LastChar = getchar();
         return Token(TokenType::tok_op, ThisChar);
+}
+
+static Token CurTok;
+static Token getNExtToken() {
+        return CurTok = GetTok();
+}
+
+std::unique_ptr<ExprAST> LogError(const char *Str) {
+        std::cerr << "LogError : " << Str << std::endl;
+        return nullptr;
+}
+
+std::unique_ptr<PrototypeAST> LogErrorP(const char *Str) {
+        LogError(Str);
+        return nullptr;
+}
+
+// Parser code
+
+// called when the current token type is tok_number
+// numberexpr ::= number
+static std::unique_ptr<ExprAST> ParseNumberExpr() {
+        auto Result = std::make_unique<NumberExprAST>(NumVal);
+        getNExtToken();
+        return std::move(Result);
+}
+
+// parenexpr ::= '(' expression ')'
+static std::unique_ptr<ExprAST> ParseParenExpr() {
+        getNExtToken(); // consume '('
+        auto V = ParseExpression();
+        if (!V) 
+                return nullptr;
+
+        if (CurTok.value() != ')')
+                return LogError("expected ')'");
+        getNExtToken(); // consume ')'
+        return V;
+}
+
+// called when the current token type is tok_identifier
+// constructs either a variable expression or function call expression
+// identifierexpr
+//   ::= identifier
+//   ::= identifier '(' expression* ')'
+static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
+        std::string IdName = IdentifierStr;
+
+        getNExtToken(); // consume the identifier
+
+        // Simple variable reference
+        if (CurTok.value() != '(')
+                return std::make_unique<VariableExprAST>(IdName);
+
+        // Function call
+        getNExtToken(); // consume '('
+        std::vector<std::unique_ptr<ExprAST>> Args;
+        if (CurTok.value() != ')') {
+                while(1) {
+                        if (auto Arg = ParseExpression())
+                                Args.push_back(std::move(Arg));
+                        else
+                                return nullptr;
+
+                        if (CurTok.value() == ')')
+                                break;
+                        
+                        if (CurTok.value() != ',')
+                                return LogError("Expected ')' or ',' ");
+                        getNExtToken();
+                }
+        }
+
+        getNExtToken(); // consume ')'
+
+        return std::make_unique<CallsExprAST>(IdName, std::move(Args));
+}
+
+// helper function to parse a primary expression
+// primary
+//   ::= identifierexpr
+//   ::= numberexpr
+//   ::= parenexpr
+static std::unique_ptr<ExprAST> ParsePrimary() {
+        if (CurTok.type() == TokenType::tok_identifier)
+                return ParseIdentifierExpr();
+        else if (CurTok.type() ==  TokenType::tok_number)
+                return ParseNumberExpr();
+        else if (CurTok.value() == '(')
+                return ParseExpression();
+        else
+                return LogError("unknown token when expecting an expression");
+        }
 }
