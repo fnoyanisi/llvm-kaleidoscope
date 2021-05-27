@@ -375,8 +375,8 @@ static std::unique_ptr<ExprAST> ParseBinOpRHS(int ExprPrec,
     }
 
     // Merge LHS/RHS.
-    LHS =
-        std::make_unique<BinaryExprAST>(BinOp, std::move(LHS), std::move(RHS));
+    LHS = std::make_unique<BinaryExprAST>(BinOp, 
+        std::move(LHS), std::move(RHS));
   }
 }
 
@@ -440,7 +440,7 @@ static std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
 
 static void HandleDefinition() {
   if (ParseDefinition()) {
-    fprintf(stderr, "Parsed a function definition.\n");
+    std::cerr << "Parsed a function definition.\n";
   } else {
     // Skip token for error recovery.
     getNextToken();
@@ -449,7 +449,7 @@ static void HandleDefinition() {
 
 static void HandleExtern() {
   if (ParseExtern()) {
-    fprintf(stderr, "Parsed an extern\n");
+    std::cerr <<  "Parsed an extern\n";
   } else {
     // Skip token for error recovery.
     getNextToken();
@@ -459,7 +459,7 @@ static void HandleExtern() {
 static void HandleTopLevelExpression() {
   // Evaluate a top-level expression into an anonymous function.
   if (ParseTopLevelExpr()) {
-    fprintf(stderr, "Parsed a top-level expr\n");
+    std::cerr << "Parsed a top-level expr\n";
   } else {
     // Skip token for error recovery.
     getNextToken();
@@ -494,7 +494,7 @@ static void MainLoop() {
 
 int main() {
   // Prime the first token.
-  fprintf(stderr, "ready> ");
+  std::cerr <<  "ready> ";
   getNextToken();
 
   // Run the main "interpreter loop" now.
