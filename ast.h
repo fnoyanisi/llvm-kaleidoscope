@@ -44,7 +44,7 @@ class NumberExprAST : public ExprAST {
         double Val;
 public:
         NumberExprAST(double v): Val{v} {}
-        void print();
+        void print() override;
 };
 
 // Expression class for referencing a variable like "a"
@@ -52,7 +52,7 @@ class VariableExprAST : public ExprAST {
         std::string Name;
 public:
         VariableExprAST(const std::string &n): Name{n} {}
-        void print();
+        void print() override;
 };
 
 // Expression class for binary operators
@@ -63,7 +63,7 @@ public:
         BinaryExprAST(char op, std::unique_ptr<ExprAST> lhs,
                 std::unique_ptr<ExprAST> rhs):
                 Op{op}, LHS{std::move(lhs)}, RHS{std::move(rhs)} {}
-        void print();
+        void print() override;
 };
 
 // Expression class for function calls
@@ -74,7 +74,7 @@ public:
         CallsExprAST(const std::string &callee,
                 std::vector<std::unique_ptr<ExprAST>> args): 
                 Callee{callee}, Args{std::move(args)} {}
-        void print();
+        void print() override;
 };
 
 // This class represents the "prototype" for a function,
