@@ -23,24 +23,53 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _TOY_LEXER_H_
+#define _TOY_LEXER_H_
+
 #include <iostream>
 #include <string>
 #include <stdexcept>
 #include <vector>
 #include <map>
 
-#include "ast.h"
-#include "lexer.h"
-#include "parser.h"
-#include "error.h"
+enum class TokenType {
+        tok_eof,
 
-int main() {
-  // Prime the first token.
-  std::cerr <<  "ready> ";
-  getNextToken();
+        // commands
+        tok_def,
+        tok_extern,
 
-  // Run the main "interpreter loop" now.
-  MainLoop();
+        // primary
+        tok_identifier,
+        tok_number,
 
-  return 0;
-}
+        // operator
+        tok_op,
+
+        // undefinied
+        tok_undef,
+
+        // left paranthesis
+        tok_lp,
+
+        // semi-colon
+        tok_sc,
+};
+
+class Token {
+        TokenType _type;
+        int _value;
+public:
+        Token(TokenType t = TokenType::tok_undef, int v = -1): 
+                _type{t}, _value{v} {};
+        const TokenType type() const { return _type; }
+        void type(TokenType t) { _type = t; }
+        const int value() const { return _value; }
+        void value(int v) { _value = v; }
+};
+
+Token GetTok();
+std::string getIdentifierStr();
+double getNumVal();
+
+#endif

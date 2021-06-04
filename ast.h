@@ -23,8 +23,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _AST_H_
-#define _AST_H_
+#ifndef _TOY_AST_H_
+#define _TOY_AST_H_
 
 #include <iostream>
 #include <string>

@@ -24,23 +24,15 @@
  */
 
 #include <iostream>
-#include <string>
-#include <stdexcept>
-#include <vector>
-#include <map>
 
 #include "ast.h"
-#include "lexer.h"
-#include "parser.h"
-#include "error.h"
 
-int main() {
-  // Prime the first token.
-  std::cerr <<  "ready> ";
-  getNextToken();
+std::unique_ptr<ExprAST> LogError(const char *Str) {
+        std::cerr << "LogError : " << Str << std::endl;
+        return nullptr;
+}
 
-  // Run the main "interpreter loop" now.
-  MainLoop();
-
-  return 0;
+std::unique_ptr<PrototypeAST> LogErrorP(const char *Str) {
+        LogError(Str);
+        return nullptr;
 }

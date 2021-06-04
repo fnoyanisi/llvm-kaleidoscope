@@ -23,24 +23,14 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _TOY_ERROR_H_
+#define _TOY_ERROR_H_
+
 #include <iostream>
-#include <string>
-#include <stdexcept>
-#include <vector>
-#include <map>
 
 #include "ast.h"
-#include "lexer.h"
-#include "parser.h"
-#include "error.h"
 
-int main() {
-  // Prime the first token.
-  std::cerr <<  "ready> ";
-  getNextToken();
+std::unique_ptr<ExprAST> LogError(const char *Str);
+std::unique_ptr<PrototypeAST> LogErrorP(const char *Str);
 
-  // Run the main "interpreter loop" now.
-  MainLoop();
-
-  return 0;
-}
+#endif

@@ -23,24 +23,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <vector>
-#include <map>
+#ifndef _TOY_PARSER_H_
+#define _TOY_PARSER_H_
 
-#include "ast.h"
 #include "lexer.h"
-#include "parser.h"
-#include "error.h"
 
-int main() {
-  // Prime the first token.
-  std::cerr <<  "ready> ";
-  getNextToken();
+Token getNextToken();
+void MainLoop();
 
-  // Run the main "interpreter loop" now.
-  MainLoop();
-
-  return 0;
-}
+#endif
