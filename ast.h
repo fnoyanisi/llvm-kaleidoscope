@@ -37,6 +37,7 @@ class ExprAST {
 public:
         virtual ~ExprAST() {}
         virtual void print() {}
+        //virtual Value *codegen() = 0;
 };
 
 // Expression class for numeric literals such as "2.1"
