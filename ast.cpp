@@ -30,13 +30,22 @@
 #include <map>
 
 #include "ast.h"
+#include "codegen.h"
 
 void NumberExprAST::print() { 
         std::cout << "Numeric Expression with value " << Val << std::endl;
 }
 
+llvm::Value* NumberExprAST::codegen(CodeGenerator *c) {
+        return c->NumberExprCodeGen(this);
+}
+
 void VariableExprAST::print() { 
         std::cout << "Variable Expression with name " << Name << std::endl; 
+}
+
+llvm::Value* VariableExprAST::codegen(CodeGenerator *c) {
+        return c->VariableExprCodeGen(this);
 }
 
 void BinaryExprAST::print() { 
@@ -45,6 +54,10 @@ void BinaryExprAST::print() {
         std::cout << "] on the left-hand side and [";
         RHS->print();
         std::cout << "] on the right-hand side.";
+}
+
+llvm::Value* BinaryExprAST::codegen(CodeGenerator *c) {
+        return c->BinaryExprCodeGen(this);
 }
 
 // Expression class for function calls
@@ -56,4 +69,16 @@ void CallsExprAST::print() {
                 e->print();
                 std::cout << std::endl;
         }
+}
+
+llvm::Value* CallsExprAST::codegen(CodeGenerator *c) {
+        return c->CallsExprCodeGen(this);
+}
+
+llvm::Function* PrototypeAST::codegen(CodeGenerator *c) {
+        return c->PrototypeCodeGen(this);
+}
+
+llvm::Function* FunctionAST::codegen(CodeGenerator *c) {
+        return c->FunctionCodeGen(this);
 }

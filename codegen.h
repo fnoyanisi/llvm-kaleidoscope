@@ -26,14 +26,38 @@
 #ifndef _TOY_CODEGEN_H_
 #define _TOY_CODEGEN_H_
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+
 #include "ast.h"
 #include "error.h"
 
-class Value;
+class NumberExprAST;
+class VariableExprAST;
+class BinaryExprAST;
+class CallsExprAST;
+class PrototypeAST;
+class FunctionAST;
 
-Value *LogErrorV(const char *Str) {
-        LogError(Str);
-        return nullptr;
-}
+class CodeGenerator {
+public:
+        llvm::Value *NumberExprCodeGen(NumberExprAST*);
+        llvm::Value *VariableExprCodeGen(VariableExprAST*);
+        llvm::Value *BinaryExprCodeGen(BinaryExprAST*);
+        llvm::Value *CallsExprCodeGen(CallsExprAST*);
+        llvm::Function *PrototypeCodeGen(PrototypeAST*);
+        llvm::Function *FunctionCodeGen(FunctionAST*);
+};
+
+llvm::Value *LogErrorV(const char *Str);
 
 #endif

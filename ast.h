@@ -26,18 +26,21 @@
 #ifndef _TOY_AST_H_
 #define _TOY_AST_H_
 
+#include "llvm/IR/Value.h"
+
 #include <iostream>
 #include <string>
 #include <stdexcept>
 #include <vector>
 #include <map>
 
+class CodeGenerator;
+
 // Base class for all expression nodes
 class ExprAST {
 public:
         virtual ~ExprAST() {}
-        virtual void print() {}
-        //virtual Value *codegen() = 0;
+        virtual void print() = 0;
 };
 
 // Expression class for numeric literals such as "2.1"
@@ -46,6 +49,8 @@ class NumberExprAST : public ExprAST {
 public:
         NumberExprAST(double v): Val{v} {}
         void print() override;
+        double getVal() const { return Val; }
+        llvm::Value *codegen(CodeGenerator*);
 };
 
 // Expression class for referencing a variable like "a"
@@ -54,6 +59,8 @@ class VariableExprAST : public ExprAST {
 public:
         VariableExprAST(const std::string &n): Name{n} {}
         void print() override;
+        const std::string& getName() const { return Name; }
+        llvm::Value *codegen(CodeGenerator*);
 };
 
 // Expression class for binary operators
@@ -65,6 +72,9 @@ public:
                 std::unique_ptr<ExprAST> rhs):
                 Op{op}, LHS{std::move(lhs)}, RHS{std::move(rhs)} {}
         void print() override;
+        const std::unique_ptr<ExprAST>& getLHS() const { return LHS; }
+        const std::unique_ptr<ExprAST>& getRHS() const { return RHS; }
+        llvm::Value* codegen(CodeGenerator*);
 };
 
 // Expression class for function calls
@@ -76,6 +86,7 @@ public:
                 std::vector<std::unique_ptr<ExprAST>> args): 
                 Callee{callee}, Args{std::move(args)} {}
         void print() override;
+        llvm::Value* codegen(CodeGenerator*);
 };
 
 // This class represents the "prototype" for a function,
@@ -88,6 +99,7 @@ public:
         PrototypeAST(const std::string &name, std::vector<std::string> args):
                 Args{std::move(args)}, Name{name} {}
         const std::string &getName() const { return Name; }
+        llvm::Function* codegen(CodeGenerator*);
 };
 
 // Function definition itself
@@ -98,6 +110,7 @@ public:
         FunctionAST(std::unique_ptr<PrototypeAST> p,
                 std::unique_ptr<ExprAST> b): 
                 Proto{std::move(p)}, Body{std::move(b)} {}
+        llvm::Function* codegen(CodeGenerator*);
 };
 
 #endif

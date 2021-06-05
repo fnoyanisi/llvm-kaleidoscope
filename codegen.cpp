@@ -23,8 +23,47 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <iostream>
+#include <string>
+#include <map>
+
 #include "codegen.h"
 
-Value* foo() {
+static llvm::LLVMContext TheContext;
+static llvm::IRBuilder<> Builder(TheContext);
+static std::unique_ptr<llvm::Module> TheModule;
+static std::map<std::string, llvm::Value*> NamedValues;
+
+llvm::Value *LogErrorV(const char *Str) {
+        LogError(Str);
+        return nullptr;
+}
+
+llvm::Value* CodeGenerator::NumberExprCodeGen(NumberExprAST* a) {
+        return llvm::ConstantFP::get(TheContext, llvm::APFloat(a->getVal()));
+}
+
+llvm::Value* CodeGenerator::VariableExprCodeGen(VariableExprAST* a) {
+        llvm::Value *V = NamedValues[a->getName()];
+        if (!V)
+                LogErrorV(std::string("Unknown variable name" + 
+                        a->getName()).c_str());
+        return V;
+}
+
+llvm::Value* CodeGenerator::BinaryExprCodeGen(BinaryExprAST* a) {
+        //llvm::Value *L = a->getLHS();
+        return nullptr;
+}
+
+llvm::Value* CodeGenerator::CallsExprCodeGen(CallsExprAST*) {
+        return nullptr;
+}
+
+llvm::Function* CodeGenerator::PrototypeCodeGen(PrototypeAST*) {
+        return nullptr;
+}
+
+llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST*) {
         return nullptr;
 }
