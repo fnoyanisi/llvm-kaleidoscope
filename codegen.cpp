@@ -34,15 +34,22 @@ static llvm::IRBuilder<> Builder(TheContext);
 static std::unique_ptr<llvm::Module> TheModule;
 static std::map<std::string, llvm::Value*> NamedValues;
 
+llvm::Value *LogErrorV(std::string str) {
+        return LogErrorV(str.c_str());
+}
+
 llvm::Value *LogErrorV(const char *Str) {
         LogError(Str);
         return nullptr;
 }
 
+// The code generator for numeric expression. This is very
+// starightforward
 llvm::Value* CodeGenerator::NumberExprCodeGen(NumberExprAST* a) {
         return llvm::ConstantFP::get(TheContext, llvm::APFloat(a->getVal()));
 }
 
+// fetch the variable from the symbol table and return its value
 llvm::Value* CodeGenerator::VariableExprCodeGen(VariableExprAST* a) {
         llvm::Value *V = NamedValues[a->getName()];
         if (!V)
@@ -51,19 +58,64 @@ llvm::Value* CodeGenerator::VariableExprCodeGen(VariableExprAST* a) {
         return V;
 }
 
+// recursively calculate the value of LHS and RHS of the 
+// binary experession
 llvm::Value* CodeGenerator::BinaryExprCodeGen(BinaryExprAST* a) {
-        //llvm::Value *L = a->getLHS();
+        llvm::Value *L = a->getLHS()->codegen(this);
+        llvm::Value *R = a->getRHS()->codegen(this);
+
+        if (!L || !R)
+                return nullptr;
+        
+        switch(a->getOp()) {
+        case '+':
+                return Builder.CreateFAdd(L, R, "addtmp");
+        case '-':
+                return Builder.CreateFSub(L, R, "subtmp");
+        case '*':
+                return Builder.CreateFMul(L, R, "multmp");
+        case '/':
+                return Builder.CreateFDiv(L, R, "divtmp");
+        case '<':
+                L = Builder.CreateFCmpULT(L, R, "cmptmp");
+                return Builder.CreateUIToFP(L, 
+                        llvm::Type::getDoubleTy(TheContext), "booltmp");
+        default:
+                return LogErrorV(std::string(": invalid binary operator.")
+                        .insert(0, 1, a->getOp()));
+        }
+
         return nullptr;
 }
 
-llvm::Value* CodeGenerator::CallsExprCodeGen(CallsExprAST*) {
+llvm::Value* CodeGenerator::CallsExprCodeGen(CallsExprAST* a) {
+        llvm::Function *CalleeF = TheModule->getFunction(a->getCallee());
+        if (!CalleeF)
+                return LogErrorV(std::string(": unknown function referenced")
+                        .insert(0, a->getCallee()));
+        
+        if (CalleeF->arg_size() != a->getArgSize())
+                return LogErrorV(std::string(": incorrect # arguments passeed")
+                        .insert(0, a->getCallee()));
+
+        std::vector<llvm::Value*> ArgsV;
+        for (unsigned i=0, e = a->getArgSize(); i != e; ++i) {
+                ExprAST *arg = a->getArgAt(i);
+                if (!arg)
+                        return LogErrorV("Error while fetching function arguments");
+                
+                ArgsV.push_back(arg->codegen(this));
+                if (!ArgsV.back())
+                        return nullptr;
+        }
+        return Builder.CreateCall(CalleeF, ArgsV, "calltmp");
+}
+
+llvm::Function* CodeGenerator::PrototypeCodeGen(PrototypeAST* a) {
         return nullptr;
 }
 
-llvm::Function* CodeGenerator::PrototypeCodeGen(PrototypeAST*) {
-        return nullptr;
-}
-
-llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST*) {
-        return nullptr;
+llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST* a) {
+        llvm::Function *TheFunction = TheModule->getFunction(a->getProto()->getName());
+        return TheFunction;
 }
