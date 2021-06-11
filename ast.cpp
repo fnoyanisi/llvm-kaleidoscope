@@ -32,7 +32,7 @@
 #include "ast.h"
 #include "codegen.h"
 
-void NumberExprAST::print() { 
+void NumberExprAST::print() const { 
         std::cout << "Numeric Expression with value " << Val << std::endl;
 }
 
@@ -40,7 +40,7 @@ llvm::Value* NumberExprAST::codegen(CodeGenerator *c) {
         return c->NumberExprCodeGen(this);
 }
 
-void VariableExprAST::print() { 
+void VariableExprAST::print() const { 
         std::cout << "Variable Expression with name " << Name << std::endl; 
 }
 
@@ -48,7 +48,7 @@ llvm::Value* VariableExprAST::codegen(CodeGenerator *c) {
         return c->VariableExprCodeGen(this);
 }
 
-void BinaryExprAST::print() { 
+void BinaryExprAST::print() const { 
         std::cout << "Binary Expression '" << Op << "' with [";
         LHS->print();
         std::cout << "] on the left-hand side and [";
@@ -60,11 +60,19 @@ llvm::Value* BinaryExprAST::codegen(CodeGenerator *c) {
         return c->BinaryExprCodeGen(this);
 }
 
+ExprAST* CallsExprAST::getArgAt(unsigned i) {
+        try {
+                return Args.at(i).get();
+        } catch (std::out_of_range const& e) {
+                return nullptr;
+        }
+}
+
 // Expression class for function calls
-void CallsExprAST::print() {
+void CallsExprAST::print() const {
         std::cout << "Calling function '" << Callee << "' with " <<
         "arguments ";
-        for (std::unique_ptr<ExprAST>& e: Args) {
+        for (const std::unique_ptr<ExprAST>& e: Args) {
                 std::cout << "\t";
                 e->print();
                 std::cout << std::endl;
@@ -75,10 +83,23 @@ llvm::Value* CallsExprAST::codegen(CodeGenerator *c) {
         return c->CallsExprCodeGen(this);
 }
 
-llvm::Function* PrototypeAST::codegen(CodeGenerator *c) {
+llvm::Value* PrototypeAST::codegen(CodeGenerator *c) {
         return c->PrototypeCodeGen(this);
 }
 
-llvm::Function* FunctionAST::codegen(CodeGenerator *c) {
+void PrototypeAST::print() const {
+        std::cout << "Function prototype for \"" << Name << "\"" << std::endl;
+}
+
+llvm::Value* FunctionAST::codegen(CodeGenerator *c) {
         return c->FunctionCodeGen(this);
+}
+
+void FunctionAST::print() const {
+        std::cout << "Function definition for\"" << Proto->getName() 
+                << "\"" << std::endl;
+}
+
+std::unique_ptr<PrototypeAST> FunctionAST::getProto() {
+        return std::move(Proto);
 }

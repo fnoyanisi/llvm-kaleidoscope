@@ -36,11 +36,19 @@
 
 class CodeGenerator;
 
+// interface for an AST node
+// each AST node can generate code and print some information
+class ASTNode {
+public:
+        virtual ~ASTNode() {}
+        virtual llvm::Value* codegen(CodeGenerator*) = 0;
+        virtual void print() const = 0;
+};
+
 // Base class for all expression nodes
-class ExprAST {
+class ExprAST : public ASTNode {
 public:
         virtual ~ExprAST() {}
-        virtual void print() = 0;
 };
 
 // Expression class for numeric literals such as "2.1"
@@ -48,9 +56,9 @@ class NumberExprAST : public ExprAST {
         double Val;
 public:
         NumberExprAST(double v): Val{v} {}
-        void print() override;
+        virtual void print() const override;
         double getVal() const { return Val; }
-        llvm::Value *codegen(CodeGenerator*);
+        virtual llvm::Value *codegen(CodeGenerator*) override;
 };
 
 // Expression class for referencing a variable like "a"
@@ -58,9 +66,9 @@ class VariableExprAST : public ExprAST {
         std::string Name;
 public:
         VariableExprAST(const std::string &n): Name{n} {}
-        void print() override;
+        virtual void print() const override;
         const std::string& getName() const { return Name; }
-        llvm::Value *codegen(CodeGenerator*);
+        virtual llvm::Value *codegen(CodeGenerator*) override;
 };
 
 // Expression class for binary operators
@@ -71,10 +79,11 @@ public:
         BinaryExprAST(char op, std::unique_ptr<ExprAST> lhs,
                 std::unique_ptr<ExprAST> rhs):
                 Op{op}, LHS{std::move(lhs)}, RHS{std::move(rhs)} {}
-        void print() override;
+        const char getOp() const { return Op; }
         const std::unique_ptr<ExprAST>& getLHS() const { return LHS; }
         const std::unique_ptr<ExprAST>& getRHS() const { return RHS; }
-        llvm::Value* codegen(CodeGenerator*);
+        virtual llvm::Value* codegen(CodeGenerator*) override;
+        virtual void print() const override;
 };
 
 // Expression class for function calls
@@ -85,32 +94,38 @@ public:
         CallsExprAST(const std::string &callee,
                 std::vector<std::unique_ptr<ExprAST>> args): 
                 Callee{callee}, Args{std::move(args)} {}
-        void print() override;
-        llvm::Value* codegen(CodeGenerator*);
+        const std::string& getCallee() const { return Callee; }
+        int getArgSize() const { return Args.size(); }
+        ExprAST* getArgAt(unsigned i);
+        virtual void print() const override;
+        virtual llvm::Value* codegen(CodeGenerator*) override;
 };
 
 // This class represents the "prototype" for a function,
 // which captures its name, and its argument names (thus implicitly the number
 // of arguments the function takes).
-class PrototypeAST {
+class PrototypeAST : public ASTNode {
         std::string Name;
         std::vector<std::string> Args;
 public:
         PrototypeAST(const std::string &name, std::vector<std::string> args):
                 Args{std::move(args)}, Name{name} {}
         const std::string &getName() const { return Name; }
-        llvm::Function* codegen(CodeGenerator*);
+        virtual void print() const override;
+        virtual llvm::Value* codegen(CodeGenerator*) override;
 };
 
 // Function definition itself
-class FunctionAST {
+class FunctionAST : public ASTNode {
         std::unique_ptr<PrototypeAST> Proto;
         std::unique_ptr<ExprAST> Body;
 public:
         FunctionAST(std::unique_ptr<PrototypeAST> p,
                 std::unique_ptr<ExprAST> b): 
                 Proto{std::move(p)}, Body{std::move(b)} {}
-        llvm::Function* codegen(CodeGenerator*);
+        virtual llvm::Value* codegen(CodeGenerator*) override;
+        virtual void print() const override;
+        std::unique_ptr<PrototypeAST> getProto();
 };
 
 #endif
