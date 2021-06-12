@@ -111,6 +111,8 @@ public:
         PrototypeAST(const std::string &name, std::vector<std::string> args):
                 Args{std::move(args)}, Name{name} {}
         const std::string &getName() const { return Name; }
+        int getArgSize() const { return Args.size(); }
+        const std::string& getArgNameAt(unsigned i) const;
         virtual void print() const override;
         virtual llvm::Value* codegen(CodeGenerator*) override;
 };
@@ -123,6 +125,7 @@ public:
         FunctionAST(std::unique_ptr<PrototypeAST> p,
                 std::unique_ptr<ExprAST> b): 
                 Proto{std::move(p)}, Body{std::move(b)} {}
+        std::unique_ptr<ExprAST> getBody() { return std::move(Body); }
         virtual llvm::Value* codegen(CodeGenerator*) override;
         virtual void print() const override;
         std::unique_ptr<PrototypeAST> getProto();

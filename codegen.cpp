@@ -112,10 +112,53 @@ llvm::Value* CodeGenerator::CallsExprCodeGen(CallsExprAST* a) {
 }
 
 llvm::Function* CodeGenerator::PrototypeCodeGen(PrototypeAST* a) {
-        return nullptr;
+        std::vector<llvm::Type*> Doubles(a->getArgSize(), 
+                                llvm::Type::getDoubleTy(TheContext));
+
+        llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(TheContext), 
+                                Doubles, false);
+
+        llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, 
+                                a->getName(), TheModule.get());
+
+        unsigned idx = 0;
+        for (auto &Arg: F->args())
+                Arg.setName(a->getArgNameAt(idx++));
+        
+        return F;
 }
 
 llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST* a) {
+        // First, check for an existing function from a previous 'extern' declaration.
         llvm::Function *TheFunction = TheModule->getFunction(a->getProto()->getName());
-        return TheFunction;
+
+        if (!TheFunction)
+                TheFunction = (llvm::Function*)(a->getProto()->codegen(this));
+        
+        if (!TheFunction)
+                return nullptr;
+        
+        if (!TheFunction->empty())
+                return (llvm::Function*)LogErrorV("Function cannot be redefined");
+
+        // Create a new basic block to start insertion into.
+        llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "entry", TheFunction);
+        Builder.SetInsertPoint(BB);
+
+        // Record the function arguments in the NamedValues map.
+        NamedValues.clear();
+        for (auto &Arg : TheFunction->args())
+                NamedValues[std::string(Arg.getName())] = &Arg;
+
+        if (llvm::Value* RetVal = a->getBody()->codegen(this)) {
+                Builder.CreateRet(RetVal);
+
+                llvm::verifyFunction(*TheFunction);
+
+                return TheFunction;
+        }
+
+        // Error reading body, remove function.
+        TheFunction->eraseFromParent();
+        return nullptr;
 }

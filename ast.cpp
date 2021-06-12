@@ -83,6 +83,10 @@ llvm::Value* CallsExprAST::codegen(CodeGenerator *c) {
         return c->CallsExprCodeGen(this);
 }
 
+const std::string& PrototypeAST::getArgNameAt(unsigned i) const {
+        return Args.at(i);;
+}
+
 llvm::Value* PrototypeAST::codegen(CodeGenerator *c) {
         return c->PrototypeCodeGen(this);
 }
