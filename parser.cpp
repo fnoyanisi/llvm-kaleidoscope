@@ -34,6 +34,11 @@
 #include "error.h"
 
 static Token CurTok;
+
+Token getCurTok() {
+        return CurTok;
+}
+
 Token getNextToken() {
         return CurTok = GetTok();
 }
@@ -209,7 +214,7 @@ static std::unique_ptr<PrototypeAST> ParsePrototype() {
 
 // function definition
 // definition ::= 'def' prototype expression
-static std::unique_ptr<FunctionAST> ParseDefinition() {
+std::unique_ptr<FunctionAST> ParseDefinition() {
         getNextToken();
 
         auto Proto = ParsePrototype();
@@ -223,71 +228,17 @@ static std::unique_ptr<FunctionAST> ParseDefinition() {
 
 // external functions
 // external ::= 'extern' prototype
-static std::unique_ptr<PrototypeAST> ParseExtern() {
+std::unique_ptr<PrototypeAST> ParseExtern() {
         getNextToken();
         return ParsePrototype();
 }
 
 // toplevelexpr ::= expression
-static std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
+std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
   if (auto E = ParseExpression()) {
     // Make an anonymous proto.
     auto Proto = std::make_unique<PrototypeAST>("", std::vector<std::string>());
     return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
   }
   return nullptr;
-}
-
-static void HandleDefinition() {
-  if (ParseDefinition()) {
-    std::cerr << "Parsed a function definition.\n";
-  } else {
-    // Skip token for error recovery.
-    getNextToken();
-  }
-}
-
-static void HandleExtern() {
-  if (ParseExtern()) {
-    std::cerr <<  "Parsed an extern\n";
-  } else {
-    // Skip token for error recovery.
-    getNextToken();
-  }
-}
-
-static void HandleTopLevelExpression() {
-  // Evaluate a top-level expression into an anonymous function.
-  if (ParseTopLevelExpr()) {
-    std::cerr << "Parsed a top-level expr\n";
-  } else {
-    // Skip token for error recovery.
-    getNextToken();
-  }
-}
-
-/// top ::= definition | external | expression | ';'
-void MainLoop() {
-  while (1) {
-    std::cerr << "ready> ";
-
-    if (CurTok.value() == ';') {
-            getNextToken();
-            continue;
-    }
-
-    switch (CurTok.type()) {
-    case TokenType::tok_eof:
-      return;
-    case TokenType::tok_def:
-      HandleDefinition();
-      break;
-    case TokenType::tok_extern:
-      HandleExtern();
-      break;
-    default:
-      HandleTopLevelExpression();
-      break;
-    }
-  }
 }

@@ -29,6 +29,10 @@
 #include "lexer.h"
 
 Token getNextToken();
-void MainLoop();
+Token getCurTok();
+
+std::unique_ptr<FunctionAST> ParseTopLevelExpr();
+std::unique_ptr<FunctionAST> ParseDefinition();
+std::unique_ptr<PrototypeAST> ParseExtern();
 
 #endif

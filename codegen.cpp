@@ -29,10 +29,19 @@
 
 #include "codegen.h"
 
-static llvm::LLVMContext TheContext;
-static llvm::IRBuilder<> Builder(TheContext);
+static std::unique_ptr<llvm::LLVMContext> TheContext;
+static std::unique_ptr<llvm::IRBuilder<>> Builder;
 static std::unique_ptr<llvm::Module> TheModule;
-static std::map<std::string, llvm::Value*> NamedValues;
+static std::map<std::string, llvm::Value*> NamedValues; // symbol table
+
+void InitializeCodeGenModule() {
+  // Open a new context and module.
+  TheContext = std::make_unique<llvm::LLVMContext>();
+  TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
+
+  // Create a new builder for the module.
+  Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
+}
 
 llvm::Value *LogErrorV(std::string str) {
         return LogErrorV(str.c_str());
@@ -46,7 +55,7 @@ llvm::Value *LogErrorV(const char *Str) {
 // The code generator for numeric expression. This is very
 // starightforward
 llvm::Value* CodeGenerator::NumberExprCodeGen(NumberExprAST* a) {
-        return llvm::ConstantFP::get(TheContext, llvm::APFloat(a->getVal()));
+        return llvm::ConstantFP::get(*TheContext, llvm::APFloat(a->getVal()));
 }
 
 // fetch the variable from the symbol table and return its value
@@ -69,17 +78,17 @@ llvm::Value* CodeGenerator::BinaryExprCodeGen(BinaryExprAST* a) {
         
         switch(a->getOp()) {
         case '+':
-                return Builder.CreateFAdd(L, R, "addtmp");
+                return Builder->CreateFAdd(L, R, "addtmp");
         case '-':
-                return Builder.CreateFSub(L, R, "subtmp");
+                return Builder->CreateFSub(L, R, "subtmp");
         case '*':
-                return Builder.CreateFMul(L, R, "multmp");
+                return Builder->CreateFMul(L, R, "multmp");
         case '/':
-                return Builder.CreateFDiv(L, R, "divtmp");
+                return Builder->CreateFDiv(L, R, "divtmp");
         case '<':
-                L = Builder.CreateFCmpULT(L, R, "cmptmp");
-                return Builder.CreateUIToFP(L, 
-                        llvm::Type::getDoubleTy(TheContext), "booltmp");
+                L = Builder->CreateFCmpULT(L, R, "cmptmp");
+                return Builder->CreateUIToFP(L, 
+                        llvm::Type::getDoubleTy(*TheContext), "booltmp");
         default:
                 return LogErrorV(std::string(": invalid binary operator.")
                         .insert(0, 1, a->getOp()));
@@ -108,18 +117,18 @@ llvm::Value* CodeGenerator::CallsExprCodeGen(CallsExprAST* a) {
                 if (!ArgsV.back())
                         return nullptr;
         }
-        return Builder.CreateCall(CalleeF, ArgsV, "calltmp");
+        return Builder->CreateCall(CalleeF, ArgsV, "calltmp");
 }
 
 llvm::Function* CodeGenerator::PrototypeCodeGen(PrototypeAST* a) {
         std::vector<llvm::Type*> Doubles(a->getArgSize(), 
-                                llvm::Type::getDoubleTy(TheContext));
+                                llvm::Type::getDoubleTy(*TheContext));
 
-        llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(TheContext), 
-                                Doubles, false);
+        llvm::FunctionType *FT = llvm::FunctionType::get(
+                                llvm::Type::getDoubleTy(*TheContext), Doubles, false);
 
         llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, 
-                                a->getName(), TheModule.get());
+                                a->getName(), *TheModule);
 
         unsigned idx = 0;
         for (auto &Arg: F->args())
@@ -142,8 +151,9 @@ llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST* a) {
                 return (llvm::Function*)LogErrorV("Function cannot be redefined");
 
         // Create a new basic block to start insertion into.
-        llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "entry", TheFunction);
-        Builder.SetInsertPoint(BB);
+        llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "entry", 
+                        TheFunction);
+        Builder->SetInsertPoint(BB);
 
         // Record the function arguments in the NamedValues map.
         NamedValues.clear();
@@ -151,7 +161,7 @@ llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST* a) {
                 NamedValues[std::string(Arg.getName())] = &Arg;
 
         if (llvm::Value* RetVal = a->getBody()->codegen(this)) {
-                Builder.CreateRet(RetVal);
+                Builder->CreateRet(RetVal);
 
                 llvm::verifyFunction(*TheFunction);
 

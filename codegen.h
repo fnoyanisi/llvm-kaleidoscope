@@ -60,4 +60,6 @@ public:
 
 llvm::Value *LogErrorV(const char *Str);
 
+void InitializeCodeGenModule();
+
 #endif
