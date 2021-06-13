@@ -74,8 +74,16 @@ static void HandleExtern() {
 
 static void HandleTopLevelExpression() {
   // Evaluate a top-level expression into an anonymous function.
-  if (ParseTopLevelExpr()) {
-    std::cerr << "Parsed a top-level expr\n";
+  if (auto FnAST = ParseTopLevelExpr()) {
+    CodeGenerator c;
+    if (auto *FnIR = (llvm::Function*)FnAST->codegen(&c)) {
+      std::cerr << "Read top-level expression:";
+      FnIR->print(llvm::errs());
+      std::cerr << std::endl;
+
+      // Remove the anonymous expression.
+      FnIR->eraseFromParent();
+    }
   } else {
     // Skip token for error recovery.
     getNextToken();
