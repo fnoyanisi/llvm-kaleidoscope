@@ -29,15 +29,96 @@
 #include <vector>
 #include <map>
 
+#include "codegen.h"
 #include "ast.h"
 #include "lexer.h"
 #include "parser.h"
 #include "error.h"
 
+//===----------------------------------------------------------------------===//
+// Top-Level parsing and JIT Driver
+//===----------------------------------------------------------------------===//
+
+static void InitializeModule() {
+  InitializeCodeGenModule();
+}
+
+static void HandleDefinition() {
+  if (auto FnAST = ParseDefinition()) {
+    CodeGenerator c;
+    if (auto *FnIR = FnAST->codegen(&c)) {
+      std::cerr << "Read function definition:";
+      //FnIR->print(errs());
+      std::cerr << "\n";
+    }
+  } else {
+    // Skip token for error recovery.
+    getNextToken();
+  }
+}
+
+static void HandleExtern() {
+  if (auto ProtoAST = ParseExtern()) {
+    CodeGenerator c;
+    if (auto *FnIR = ProtoAST->codegen(&c)) {
+      std::cerr << "Read extern: ";
+      //FnIR->print(errs());
+      std::cerr << "\n";
+    }
+  } else {
+    // Skip token for error recovery.
+    getNextToken();
+  }
+}
+
+
+static void HandleTopLevelExpression() {
+  // Evaluate a top-level expression into an anonymous function.
+  if (ParseTopLevelExpr()) {
+    std::cerr << "Parsed a top-level expr\n";
+  } else {
+    // Skip token for error recovery.
+    getNextToken();
+  }
+}
+
+/// top ::= definition | external | expression | ';'
+void MainLoop() {
+  while (1) {
+    std::cerr << "ready> ";
+
+    if (getCurTok().value() == ';') {
+            getNextToken();
+            continue;
+    }
+
+    switch (getCurTok().type()) {
+    case TokenType::tok_eof:
+      return;
+    case TokenType::tok_def:
+      HandleDefinition();
+      break;
+    case TokenType::tok_extern:
+      HandleExtern();
+      break;
+    default:
+      HandleTopLevelExpression();
+      break;
+    }
+  }
+}
+
+//===----------------------------------------------------------------------===//
+// Main driver code.
+//===----------------------------------------------------------------------===//
+
 int main() {
   // Prime the first token.
   std::cerr <<  "ready> ";
   getNextToken();
+
+  // Make the module, which holds all the code.
+  InitializeModule();
 
   // Run the main "interpreter loop" now.
   MainLoop();
