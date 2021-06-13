@@ -48,7 +48,7 @@ static void HandleDefinition() {
     CodeGenerator c;
     if (auto *FnIR = FnAST->codegen(&c)) {
       std::cerr << "Read function definition:";
-      //FnIR->print(errs());
+      FnIR->print(llvm::errs());
       std::cerr << "\n";
     }
   } else {
@@ -62,7 +62,7 @@ static void HandleExtern() {
     CodeGenerator c;
     if (auto *FnIR = ProtoAST->codegen(&c)) {
       std::cerr << "Read extern: ";
-      //FnIR->print(errs());
+      FnIR->print(llvm::errs());
       std::cerr << "\n";
     }
   } else {
