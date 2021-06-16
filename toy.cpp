@@ -76,7 +76,7 @@ static void HandleTopLevelExpression() {
   // Evaluate a top-level expression into an anonymous function.
   if (auto FnAST = ParseTopLevelExpr()) {
     CodeGenerator c;
-    if (auto *FnIR = (llvm::Function*)FnAST->codegen(&c)) {
+    if (auto *FnIR = static_cast<llvm::Function*>(FnAST->codegen(&c))) {
       std::cerr << "Read top-level expression:";
       FnIR->print(llvm::errs());
       std::cerr << std::endl;

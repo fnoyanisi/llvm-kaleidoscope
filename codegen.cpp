@@ -142,13 +142,13 @@ llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST* a) {
         llvm::Function *TheFunction = TheModule->getFunction(a->getProto()->getName());
 
         if (!TheFunction)
-                TheFunction = (llvm::Function*)(a->getProto()->codegen(this));
+                TheFunction = static_cast<llvm::Function*>(a->getProto()->codegen(this));
         
         if (!TheFunction)
                 return nullptr;
         
         if (!TheFunction->empty())
-                return (llvm::Function*)LogErrorV("Function cannot be redefined");
+                return static_cast<llvm::Function*>(LogErrorV("Function cannot be redefined"));
 
         // Create a new basic block to start insertion into.
         llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "entry", 
