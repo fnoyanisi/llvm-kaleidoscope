@@ -47,7 +47,7 @@ static void HandleDefinition() {
   if (auto FnAST = ParseDefinition()) {
     CodeGenerator c;
     if (auto *FnIR = FnAST->codegen(&c)) {
-      std::cerr << "Read function definition:";
+      std::cerr << "Read function definition:" << std::endl;
       FnIR->print(llvm::errs());
       std::cerr << "\n";
     }
@@ -61,7 +61,7 @@ static void HandleExtern() {
   if (auto ProtoAST = ParseExtern()) {
     CodeGenerator c;
     if (auto *FnIR = ProtoAST->codegen(&c)) {
-      std::cerr << "Read extern: ";
+      std::cerr << "Read extern: " << std::endl;
       FnIR->print(llvm::errs());
       std::cerr << "\n";
     }
@@ -77,7 +77,7 @@ static void HandleTopLevelExpression() {
   if (auto FnAST = ParseTopLevelExpr()) {
     CodeGenerator c;
     if (auto *FnIR = static_cast<llvm::Function*>(FnAST->codegen(&c))) {
-      std::cerr << "Read top-level expression:";
+      std::cerr << "Read top-level expression:" << std::endl;
       FnIR->print(llvm::errs());
       std::cerr << std::endl;
 
