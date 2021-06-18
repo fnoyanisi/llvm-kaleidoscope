@@ -104,6 +104,10 @@ void FunctionAST::print() const {
                 << "\"" << std::endl;
 }
 
-std::unique_ptr<PrototypeAST> FunctionAST::getProto() {
-        return std::move(Proto);
+PrototypeAST *FunctionAST::getProto() {
+        return Proto.get();
+}
+
+ExprAST *FunctionAST::getBody() {
+        return Body.get();
 }

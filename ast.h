@@ -125,10 +125,10 @@ public:
         FunctionAST(std::unique_ptr<PrototypeAST> p,
                 std::unique_ptr<ExprAST> b): 
                 Proto{std::move(p)}, Body{std::move(b)} {}
-        std::unique_ptr<ExprAST> getBody() { return std::move(Body); }
+        ExprAST *getBody();
         virtual llvm::Value* codegen(CodeGenerator*) override;
         virtual void print() const override;
-        std::unique_ptr<PrototypeAST> getProto();
+        PrototypeAST *getProto();
 };
 
 #endif
