@@ -122,8 +122,11 @@ static std::unique_ptr<ExprAST> ParsePrimary() {
                 case TokenType::tok_lp:
                         return ParseParenExpr();
                 default:
-                        return LogError("Unknown token when expecting an"
-                                " expression");
+                        std::string m = "Unknown token '' when expecting "
+                                "an expression.";
+                        m.insert(m.cbegin() + m.find_first_of('\'') + 1, 1, 
+                                CurTok.value());
+                        return LogError(m.c_str());
         }
 }
 
