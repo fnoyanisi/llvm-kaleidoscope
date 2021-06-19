@@ -65,8 +65,10 @@ Token GetTok() {
         }
 
         // left-paranthesis
-        if (LastChar == '(')
+        if (LastChar == '(') {
+                LastChar = getchar();
                 return Token(TokenType::tok_lp, '(');
+        }
         
         // semi-colon
         // read a new expression
