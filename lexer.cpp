@@ -60,12 +60,19 @@ Token GetTok() {
                         return Token(TokenType::tok_def);
                 else if (IdentifierStr == "extern")
                         return Token(TokenType::tok_extern);
-                else if (IdentifierStr == "(")
-                        return Token(TokenType::tok_lp, '(');
-                else if (IdentifierStr == ";")
-                        return Token(TokenType::tok_lp, ';');
                 else
                         return Token(TokenType::tok_identifier);
+        }
+
+        // left-paranthesis
+        if (LastChar == '(')
+                return Token(TokenType::tok_lp, '(');
+        
+        // semi-colon
+        // read a new expression
+        if (LastChar == ';') {
+                LastChar = getchar();
+                return Token(TokenType::tok_sc, ';');
         }
 
         // numerical values
