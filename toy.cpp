@@ -93,7 +93,7 @@ static void HandleTopLevelExpression() {
 /// top ::= definition | external | expression | ';'
 void MainLoop() {
   while (1) {
-    std::cerr << "ready> ";
+    
 
     if (getCurTok().value() == ';') {
             getNextToken();
@@ -113,6 +113,8 @@ void MainLoop() {
       HandleTopLevelExpression();
       break;
     }
+
+    std::cerr << "ready> ";
   }
 }
 
