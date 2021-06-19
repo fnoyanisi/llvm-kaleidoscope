@@ -62,7 +62,7 @@ llvm::Value* CodeGenerator::NumberExprCodeGen(NumberExprAST* a) {
 llvm::Value* CodeGenerator::VariableExprCodeGen(VariableExprAST* a) {
         llvm::Value *V = NamedValues[a->getName()];
         if (!V)
-                LogErrorV(std::string("Unknown variable name" + 
+                LogErrorV(std::string("Unknown variable name : " + 
                         a->getName()).c_str());
         return V;
 }
@@ -148,7 +148,7 @@ llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST* a) {
                 return nullptr;
         
         if (!TheFunction->empty())
-                return static_cast<llvm::Function*>(LogErrorV("Function cannot be redefined"));
+                return static_cast<llvm::Function*>(LogErrorV("Function cannot be redefined."));
 
         // Create a new basic block to start insertion into.
         llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "entry", 
