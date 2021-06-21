@@ -23,6 +23,25 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
+
+#include <functional>
 #include <iostream>
 #include <string>
 #include <map>
@@ -32,15 +51,33 @@
 static std::unique_ptr<llvm::LLVMContext> TheContext;
 static std::unique_ptr<llvm::IRBuilder<>> Builder;
 static std::unique_ptr<llvm::Module> TheModule;
+static std::unique_ptr<llvm::legacy::FunctionPassManager> TheFPM;
 static std::map<std::string, llvm::Value*> NamedValues; // symbol table
 
-void InitializeCodeGenModule() {
-  // Open a new context and module.
-  TheContext = std::make_unique<llvm::LLVMContext>();
-  TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
+void InitializeCodeGenModuleAndPassManager() {
+        // Open a new context and module.
+        TheContext = std::make_unique<llvm::LLVMContext>();
+        TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
 
-  // Create a new builder for the module.
-  Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
+        // Create a new pass manager
+        TheFPM = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
+
+        // ====== 
+        // add optimisations
+        // ======
+        // do simple peephole opt, and bit-twiddling opt
+        TheFPM->add(llvm::createInstructionCombiningPass());
+        // reassociate expressions
+        TheFPM->add(llvm::createReassociatePass());
+        // eliminiate common subexpression
+        TheFPM->add(llvm::createGVNPass());
+        // simplfy the control flow graph (delete unreachable branches etc.)
+        TheFPM->add(llvm::createCFGSimplificationPass());
+
+        TheFPM->doInitialization();
+
+        // Create a new builder for the module.
+        Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 }
 
 llvm::Value *LogErrorV(std::string str) {
@@ -161,9 +198,14 @@ llvm::Function* CodeGenerator::FunctionCodeGen(FunctionAST* a) {
                 NamedValues[std::string(Arg.getName())] = &Arg;
 
         if (llvm::Value* RetVal = a->getBody()->codegen(this)) {
+                // finish off the function
                 Builder->CreateRet(RetVal);
 
+                // validate the generated code
                 llvm::verifyFunction(*TheFunction);
+
+                // optimize the function
+                TheFPM->run(*TheFunction);
 
                 return TheFunction;
         }

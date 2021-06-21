@@ -40,7 +40,7 @@
 //===----------------------------------------------------------------------===//
 
 static void InitializeModule() {
-  InitializeCodeGenModule();
+  InitializeCodeGenModuleAndPassManager();
 }
 
 static void HandleDefinition() {
