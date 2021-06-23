@@ -29,6 +29,7 @@
 #include <vector>
 #include <map>
 
+#include "jit.h"
 #include "codegen.h"
 #include "ast.h"
 #include "lexer.h"

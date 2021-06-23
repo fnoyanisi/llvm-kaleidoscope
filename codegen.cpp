@@ -47,6 +47,7 @@
 #include <map>
 
 #include "codegen.h"
+#include "jit.h"
 
 static std::unique_ptr<llvm::LLVMContext> TheContext;
 static std::unique_ptr<llvm::IRBuilder<>> Builder;
@@ -58,6 +59,9 @@ void InitializeCodeGenModuleAndPassManager() {
         // Open a new context and module.
         TheContext = std::make_unique<llvm::LLVMContext>();
         TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
+
+        // setup the data layout for the JIT
+        TheModule->setDataLayout(getJIT()->getDataLayout());
 
         // Create a new pass manager
         TheFPM = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
