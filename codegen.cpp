@@ -40,6 +40,7 @@
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Support/Error.h"
 
 #include <functional>
 #include <iostream>
@@ -55,13 +56,29 @@ static std::unique_ptr<llvm::Module> TheModule;
 static std::unique_ptr<llvm::legacy::FunctionPassManager> TheFPM;
 static std::map<std::string, llvm::Value*> NamedValues; // symbol table
 
+std::unique_ptr<llvm::Module> getModule() {
+        return std::move(TheModule);
+}
+
+llvm::Module* pModule() {
+        return TheModule.get();
+}
+
+std::unique_ptr<llvm::LLVMContext> getContext() {
+        return std::move(TheContext);
+}
+
+llvm::LLVMContext* pContext() {
+        return TheContext.get();
+}
+
 void InitializeCodeGenModuleAndPassManager() {
         // Open a new context and module.
         TheContext = std::make_unique<llvm::LLVMContext>();
         TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
 
         // setup the data layout for the JIT
-        TheModule->setDataLayout(getJIT()->getDataLayout());
+        TheModule->setDataLayout(pJIT()->getDataLayout());
 
         // Create a new pass manager
         TheFPM = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());

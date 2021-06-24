@@ -38,6 +38,8 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 
+#include <memory>
+
 #include "ast.h"
 #include "error.h"
 
@@ -59,6 +61,10 @@ public:
 };
 
 llvm::Value *LogErrorV(const char *Str);
+std::unique_ptr<llvm::Module> getModule();
+llvm::Module* pModule();
+std::unique_ptr<llvm::LLVMContext> getContext();
+llvm::LLVMContext* pContext();
 
 void InitializeCodeGenModuleAndPassManager();
 
