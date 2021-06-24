@@ -29,6 +29,8 @@
 #include <vector>
 #include <map>
 
+#include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
+
 #include "jit.h"
 #include "codegen.h"
 #include "ast.h"
@@ -72,18 +74,38 @@ static void HandleExtern() {
   }
 }
 
-
+// with the JIT support, when a top level expression is read
+// we evaluate it
 static void HandleTopLevelExpression() {
   // Evaluate a top-level expression into an anonymous function.
   if (auto FnAST = ParseTopLevelExpr()) {
     CodeGenerator c;
     if (auto *FnIR = static_cast<llvm::Function*>(FnAST->codegen(&c))) {
+      
+      // no need to spit out codegen
       std::cerr << "Read top-level expression:" << std::endl;
       FnIR->print(llvm::errs());
       std::cerr << std::endl;
 
-      // Remove the anonymous expression.
-      FnIR->eraseFromParent();
+      // Create a ResourceTracker to track JIT'd memory allocated to our
+      // anonymous expression -- that way we can free it after executing.
+      auto RT = pJIT()->getMainJITDylib().createResourceTracker();
+
+      auto TSM = llvm::orc::ThreadSafeModule(getModule(), getContext());
+      llvm::ExitOnError ExitOnErr;
+      ExitOnErr(pJIT()->addModule(std::move(TSM), RT));
+      InitializeCodeGenModuleAndPassManager();
+
+      // search the JIT for the __anon_expr symbol
+      auto ExprSymbol = ExitOnErr(pJIT()->lookup("__anon_expr"));
+
+      // Get the symbol's address and cast it to the right type (takes no
+      // arguments, returns a double) so we can call it as a native function.
+      double (*FP)() = (double(*)())ExprSymbol.getAddress();
+      std::cerr << "Evaluated to : " << FP() << std::endl;
+
+      // Delete the anonymous expression module from the JIT.
+      ExitOnErr(RT->remove());
     }
   } else {
     // Skip token for error recovery.
@@ -124,6 +146,8 @@ void MainLoop() {
 //===----------------------------------------------------------------------===//
 
 int main() {
+  InitializeJit();
+
   // Prime the first token.
   std::cerr <<  "ready> ";
   getNextToken();
