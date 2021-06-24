@@ -57,6 +57,6 @@
 #include <vector>
 
 void InitializeJit();
-llvm::orc::KaleidoscopeJIT *getJIT();
+llvm::orc::KaleidoscopeJIT* pJIT();
 
 #endif

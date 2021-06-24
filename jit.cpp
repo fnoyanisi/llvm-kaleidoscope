@@ -28,7 +28,7 @@
 static std::unique_ptr<llvm::orc::KaleidoscopeJIT> TheJIT;
 static llvm::ExitOnError ExitOnErr;
 
-void InitialiezeJit() {
+void InitializeJit() {
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
         llvm::InitializeNativeTargetAsmParser();
@@ -36,6 +36,6 @@ void InitialiezeJit() {
         TheJIT = ExitOnErr(llvm::orc::KaleidoscopeJIT::Create());
 }
 
-llvm::orc::KaleidoscopeJIT *getJIT() {
+llvm::orc::KaleidoscopeJIT* pJIT() {
         return TheJIT.get();
 }
